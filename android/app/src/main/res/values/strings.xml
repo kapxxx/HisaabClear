@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Hisab Clear</string>
+    <string name="title_activity_main">Hisab Clear</string>
+    <string name="package_name">com.hisabclear.app</string>
+    <string name="custom_url_scheme">com.hisabclear.app</string>
+</resources>

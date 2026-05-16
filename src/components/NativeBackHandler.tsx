@@ -22,7 +22,11 @@ export default function NativeBackHandler() {
       const p = pathRef.current
 
       if (p === '/home' || p === '/') {
-        void App.exitApp()
+        if ((window as any).isSelectionMode) {
+          window.dispatchEvent(new Event('clear-selection'))
+        } else {
+          void App.exitApp()
+        }
         return
       }
 

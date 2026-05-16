@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { deleteTransactions, loadTransactions } from '../lib/storage'
 
@@ -48,6 +48,38 @@ export default function Home() {
   const hasList = transactions.length > 0
   const selCount = selected.size
 
+  useEffect(() => {
+    ;(window as any).isSelectionMode = selCount > 0
+    return () => {
+      ;(window as any).isSelectionMode = false
+    }
+  }, [selCount])
+
+  useEffect(() => {
+    const handleCustomBack = () => {
+      setSelected(new Set())
+    }
+    window.addEventListener('clear-selection', handleCustomBack)
+    return () => window.removeEventListener('clear-selection', handleCustomBack)
+  }, [])
+
+  const timerRef = useRef<number | null>(null)
+
+  const handlePointerDown = (id: string) => {
+    if (selCount > 0) return
+    timerRef.current = window.setTimeout(() => {
+      toggle(id)
+      timerRef.current = null
+    }, 500)
+  }
+
+  const handlePointerUpOrLeave = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current)
+      timerRef.current = null
+    }
+  }
+
   return (
     <div className="page">
       <header className="header">
@@ -56,23 +88,21 @@ export default function Home() {
       </header>
 
       <main className="main">
-        {hasList && (
+        {hasList && selCount > 0 && (
           <div className="bulk-bar">
             <button type="button" className="btn-text" onClick={toggleAll}>
               {selCount === transactions.length ? 'Clear all' : 'Select all'}
             </button>
-            {selCount > 0 && (
-              <button type="button" className="btn-text" onClick={clearSelection}>
-                Clear selection
-              </button>
-            )}
+            <button type="button" className="btn-text" onClick={clearSelection}>
+              Clear selection
+            </button>
             <button
               type="button"
               className="btn-danger-inline"
               disabled={selCount === 0}
               onClick={deleteSelected}
             >
-              Delete{selCount ? ` (${selCount})` : ''}
+              Delete ({selCount})
             </button>
           </div>
         )}
@@ -90,21 +120,47 @@ export default function Home() {
             {transactions.map((tx, index) => (
               <li key={tx.id}>
                 <div className="list-item-row">
-                  <label className="list-check">
-                    <input
-                      type="checkbox"
-                      checked={selected.has(tx.id)}
-                      onChange={() => toggle(tx.id)}
-                    />
-                    <span className="sr-only">Select {tx.name}</span>
-                  </label>
-                  <Link className="list-item" to={`/transaction/${tx.id}`}>
-                    <span className="list-index">{index + 1}.</span>
-                    <span className="list-name">{tx.name}</span>
-                    <span className="list-chevron" aria-hidden>
-                      →
-                    </span>
-                  </Link>
+                  {selCount > 0 && (
+                    <label className="list-check">
+                      <input
+                        type="checkbox"
+                        checked={selected.has(tx.id)}
+                        onChange={() => toggle(tx.id)}
+                      />
+                      <span className="sr-only">Select {tx.name}</span>
+                    </label>
+                  )}
+                  {selCount > 0 ? (
+                    <div 
+                      className="list-item" 
+                      onClick={() => toggle(tx.id)}
+                      style={{ cursor: 'pointer', flex: 1 }}
+                    >
+                      <span className="list-index">{index + 1}.</span>
+                      <span className="list-name">{tx.name}</span>
+                    </div>
+                  ) : (
+                    <Link 
+                      className="list-item" 
+                      to={`/transaction/${tx.id}`}
+                      onTouchStart={() => handlePointerDown(tx.id)}
+                      onTouchEnd={handlePointerUpOrLeave}
+                      onTouchMove={handlePointerUpOrLeave}
+                      onMouseDown={() => handlePointerDown(tx.id)}
+                      onMouseUp={handlePointerUpOrLeave}
+                      onMouseLeave={handlePointerUpOrLeave}
+                      style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
+                      onContextMenu={(e) => {
+                        e.preventDefault()
+                      }}
+                    >
+                      <span className="list-index">{index + 1}.</span>
+                      <span className="list-name">{tx.name}</span>
+                      <span className="list-chevron" aria-hidden>
+                        →
+                      </span>
+                    </Link>
+                  )}
                 </div>
               </li>
             ))}

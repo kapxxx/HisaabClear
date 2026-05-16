@@ -1,6 +1,7 @@
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { computeSettlement, formatRupees } from '../lib/settlement'
 import { getTransaction } from '../lib/storage'
+import { generateAndSharePDF } from '../lib/pdf'
 
 export default function Detail() {
   const { id } = useParams<{ id: string }>()
@@ -47,6 +48,14 @@ export default function Detail() {
     )
   }
 
+  const handleShare = () => {
+    if (tx && result) generateAndSharePDF(tx, result, 'share')
+  }
+
+  const handleDownload = () => {
+    if (tx && result) generateAndSharePDF(tx, result, 'download')
+  }
+
   return (
     <div className="page">
       <header className="header header-row header-split">
@@ -60,9 +69,18 @@ export default function Detail() {
 
       <main className="main">
         <h2 className="detail-title">{tx.name}</h2>
-        <p className="muted detail-meta">
+        <p className="muted detail-meta" style={{ marginBottom: '0.75rem' }}>
           Total pool {formatRupees(result.total)} · {result.sharePerPersonNote}
         </p>
+
+        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem' }}>
+          <button type="button" className="btn btn-primary" style={{ flex: 1, padding: '0.65rem' }} onClick={handleShare}>
+            Share PDF
+          </button>
+          <button type="button" className="btn-edit" style={{ flex: 1, padding: '0.65rem', textAlign: 'center', cursor: 'pointer' }} onClick={handleDownload}>
+            Download PDF
+          </button>
+        </div>
 
         <h3 className="subsection-title">Paid vs fair share</h3>
         <div className="table-wrap">

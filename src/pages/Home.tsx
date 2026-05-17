@@ -167,7 +167,16 @@ export default function Home() {
           </ul>
         )}
 
-        <Link className="btn btn-primary" to="/create">
+        <Link 
+          className="btn btn-primary" 
+          to="/create"
+          onClick={(e) => {
+            if (transactions.length >= 50) {
+              e.preventDefault()
+              window.alert('Maximum limit of 50 transactions reached. Please delete some to create new ones.')
+            }
+          }}
+        >
           Make transaction
         </Link>
       </main>

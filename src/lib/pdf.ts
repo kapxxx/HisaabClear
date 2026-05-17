@@ -5,11 +5,18 @@ import autoTable from 'jspdf-autotable'
 import type { SettlementResult, Transaction } from '../types'
 import { formatRupees } from './settlement'
 
+function cleanForPDF(str: string): string {
+  return str
+    .replace(/₹/g, 'Rs. ')
+    .replace(/–/g, '-') // Replace en-dash with standard hyphen
+    .replace(/[\u202F\u00A0]/g, '') // Remove narrow no-break space or non-breaking space (keeps numbers together)
+}
+
 export async function generateAndSharePDF(
   tx: Transaction,
   result: SettlementResult,
   action: 'share' | 'download',
-) {
+): Promise<boolean | void> {
   const doc = new jsPDF()
 
   // Title
@@ -19,8 +26,8 @@ export async function generateAndSharePDF(
   // Meta
   doc.setFontSize(12)
   doc.setTextColor(100)
-  doc.text(`Total pool: ${formatRupees(result.total)}`, 14, 32)
-  doc.text(`Details: ${result.sharePerPersonNote}`, 14, 40)
+  doc.text(`Total expense: ${cleanForPDF(formatRupees(result.total))}`, 14, 32)
+  doc.text(`Details: ${cleanForPDF(result.sharePerPersonNote)}`, 14, 40)
 
   // Balances table
   doc.setFontSize(14)
@@ -29,14 +36,21 @@ export async function generateAndSharePDF(
 
   const tableData = result.balances.map((b) => {
     let diff = '0'
-    if (b.balance > 0) diff = `+${formatRupees(b.balance)}`
-    else if (b.balance < 0) diff = formatRupees(b.balance)
+    let diffColor: [number, number, number] | undefined = undefined
+
+    if (b.balance > 0) {
+      diff = `+${cleanForPDF(formatRupees(b.balance))}`
+      diffColor = [0, 120, 0] // Dark Green
+    } else if (b.balance < 0) {
+      diff = cleanForPDF(formatRupees(b.balance))
+      diffColor = [180, 0, 0] // Dark Red
+    }
     
     return [
       b.note ? `${b.name} (${b.note})` : b.name,
-      formatRupees(b.paid),
-      formatRupees(b.share),
-      diff,
+      cleanForPDF(formatRupees(b.paid)),
+      cleanForPDF(formatRupees(b.share)),
+      diffColor ? ({ content: diff, styles: { textColor: diffColor, fontStyle: 'bold' } } as any) : diff,
     ]
   })
 
@@ -63,7 +77,7 @@ export async function generateAndSharePDF(
     doc.setFontSize(12)
     let yPos = finalY + 22
     result.transfers.forEach((t) => {
-      doc.text(`${t.fromName}  ->  ${t.toName}  :  ${formatRupees(t.amount)}`, 14, yPos)
+      doc.text(`${t.fromName} -> ${t.toName} : ${cleanForPDF(formatRupees(t.amount))}`, 14, yPos)
       yPos += 8
     })
   }
@@ -86,10 +100,11 @@ export async function generateAndSharePDF(
           data: base64Data,
           directory: Directory.Documents,
         })
-        window.alert('PDF saved to Documents folder!')
+        return true
       } catch (err) {
         // Fallback for web or if permissions fail
         doc.save(fileName)
+        return true
       }
     } else {
       // share
@@ -102,10 +117,11 @@ export async function generateAndSharePDF(
         await Share.share({
           title: `Hisab Clear: ${tx.name}`,
           text: `Here is the settlement summary for ${tx.name}`,
-          url: savedFile.uri,
+          files: [savedFile.uri],
           dialogTitle: 'Share PDF Summary',
         })
-      } catch (e) {
+      } catch (e: any) {
+        if (e?.message?.toLowerCase().includes('cancel')) return
         window.alert('Sharing is not supported on this device/browser.')
       }
     }

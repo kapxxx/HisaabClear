@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useMatch, useNavigate } from 'react-router-dom'
-import { getTransaction, saveTransaction } from '../lib/storage'
+import { getTransaction, saveTransaction, loadTransactions } from '../lib/storage'
 import type { Participant } from '../types'
 
 interface RowData extends Participant {
@@ -143,6 +143,12 @@ export default function Create() {
       return
     }
 
+    const allTx = loadTransactions()
+    if (allTx.length >= 50) {
+      window.alert('Maximum limit of 50 transactions reached. Please delete some to create new ones.')
+      return
+    }
+
     const tx = {
       id: crypto.randomUUID(),
       name,
@@ -174,7 +180,7 @@ export default function Create() {
           </div>
           <input
             className={`input ${errors.title ? 'is-invalid' : ''}`}
-            placeholder="e.g. Kerala trip"
+            placeholder="e.g. trip"
             value={title}
             onChange={(e) => {
               const val = e.target.value
@@ -249,8 +255,14 @@ export default function Create() {
                         className="input input-note"
                         placeholder="Paid for (optional), e.g. food"
                         value={row.note ?? ''}
-                        onChange={(e) => updateRow(row.id, { note: e.target.value })}
+                        onChange={(e) => {
+                          const v = e.target.value
+                          if (v.length <= 50) {
+                            updateRow(row.id, { note: v })
+                          }
+                        }}
                         autoComplete="off"
+                        maxLength={50}
                       />
                     </div>
                   )}

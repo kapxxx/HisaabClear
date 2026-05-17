@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { computeSettlement, formatRupees } from '../lib/settlement'
 import { getTransaction } from '../lib/storage'
@@ -6,6 +7,8 @@ import { generateAndSharePDF } from '../lib/pdf'
 export default function Detail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const [toastMessage, setToastMessage] = useState<string | null>(null)
+  const [showToast, setShowToast] = useState(false)
 
   const tx = id ? getTransaction(id) : undefined
 
@@ -52,8 +55,16 @@ export default function Detail() {
     if (tx && result) generateAndSharePDF(tx, result, 'share')
   }
 
-  const handleDownload = () => {
-    if (tx && result) generateAndSharePDF(tx, result, 'download')
+  const handleDownload = async () => {
+    if (tx && result) {
+      const ok = await generateAndSharePDF(tx, result, 'download')
+      if (ok) {
+        setToastMessage('✓ PDF downloaded successfully!')
+        setShowToast(true)
+        setTimeout(() => setShowToast(false), 2700)
+        setTimeout(() => setToastMessage(null), 3000)
+      }
+    }
   }
 
   return (
@@ -70,7 +81,7 @@ export default function Detail() {
       <main className="main">
         <h2 className="detail-title">{tx.name}</h2>
         <p className="muted detail-meta" style={{ marginBottom: '0.75rem' }}>
-          Total pool {formatRupees(result.total)} · {result.sharePerPersonNote}
+          Total expense {formatRupees(result.total)} · {result.sharePerPersonNote}
         </p>
 
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem' }}>
@@ -142,6 +153,30 @@ export default function Detail() {
           means they should <strong>pay</strong> others.
         </p>
       </main>
+
+      <div style={{
+        position: 'fixed',
+        bottom: '24px',
+        left: '50%',
+        transform: `translate(-50%, ${showToast ? '0' : '20px'})`,
+        opacity: showToast ? 1 : 0,
+        visibility: toastMessage ? 'visible' : 'hidden',
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        backgroundColor: '#2e7d32',
+        color: 'white',
+        padding: '12px 24px',
+        borderRadius: '8px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+        zIndex: 1000,
+        fontWeight: '500',
+        fontSize: '14px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        pointerEvents: 'none'
+      }}>
+        {toastMessage}
+      </div>
     </div>
   )
 }

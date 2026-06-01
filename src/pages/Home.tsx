@@ -6,11 +6,18 @@ export default function Home() {
   const location = useLocation()
   const [tick, setTick] = useState(0)
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
+  const [searchQuery, setSearchQuery] = useState('')
 
   const transactions = useMemo(
     () => loadTransactions(),
     [location.key, location.pathname, tick],
   )
+
+  const filteredTransactions = useMemo(() => {
+    if (!searchQuery.trim()) return transactions
+    const q = searchQuery.toLowerCase()
+    return transactions.filter((t) => t.name.toLowerCase().includes(q))
+  }, [transactions, searchQuery])
 
   const toggle = useCallback((id: string) => {
     setSelected((prev) => {
@@ -22,12 +29,12 @@ export default function Home() {
   }, [])
 
   const toggleAll = useCallback(() => {
-    if (transactions.length === 0) return
+    if (filteredTransactions.length === 0) return
     setSelected((prev) => {
-      if (prev.size === transactions.length) return new Set()
-      return new Set(transactions.map((t) => t.id))
+      if (prev.size === filteredTransactions.length) return new Set()
+      return new Set(filteredTransactions.map((t) => t.id))
     })
-  }, [transactions])
+  }, [filteredTransactions])
 
   const clearSelection = useCallback(() => setSelected(new Set()), [])
 
@@ -82,16 +89,48 @@ export default function Home() {
 
   return (
     <div className="page">
-      <header className="header">
+      <header className="header sticky-header">
         <h1 className="header-title">Hisab Clear</h1>
         <p className="header-sub">Your settlements</p>
       </header>
 
       <main className="main">
+        {hasList && (
+          <div className="search-container">
+            <span className="search-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </span>
+            <input
+              type="text"
+              className="search-input"
+              placeholder="Search transactions..."
+              maxLength={20}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value.slice(0, 20))}
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                className="search-clear"
+                onClick={() => setSearchQuery('')}
+                aria-label="Clear search"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            )}
+          </div>
+        )}
+
         {hasList && selCount > 0 && (
           <div className="bulk-bar">
             <button type="button" className="btn-text" onClick={toggleAll}>
-              {selCount === transactions.length ? 'Clear all' : 'Select all'}
+              {selCount === filteredTransactions.length ? 'Clear all' : 'Select all'}
             </button>
             <button type="button" className="btn-text" onClick={clearSelection}>
               Clear selection
@@ -115,9 +154,16 @@ export default function Home() {
               tell you exactly who should pay whom.
             </p>
           </div>
+        ) : filteredTransactions.length === 0 ? (
+          <div className="empty">
+            <p className="empty-title">No transactions found</p>
+            <p className="empty-text">
+              We couldn't find any transactions matching "{searchQuery}".
+            </p>
+          </div>
         ) : (
           <ul className="list">
-            {transactions.map((tx, index) => (
+            {filteredTransactions.map((tx, index) => (
               <li key={tx.id}>
                 <div className="list-item-row">
                   {selCount > 0 && (
@@ -168,8 +214,9 @@ export default function Home() {
         )}
 
         <Link 
-          className="btn btn-primary" 
+          className="btn-fab" 
           to="/create"
+          title="Make transaction"
           onClick={(e) => {
             if (transactions.length >= 50) {
               e.preventDefault()
@@ -177,7 +224,11 @@ export default function Home() {
             }
           }}
         >
-          Make transaction
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          <span>Make transaction</span>
         </Link>
       </main>
     </div>

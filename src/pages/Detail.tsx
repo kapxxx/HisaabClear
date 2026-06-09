@@ -1,16 +1,20 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useAuth } from '../components/AuthContext'
 import { computeSettlement, formatRupees } from '../lib/settlement'
 import { getTransaction } from '../lib/storage'
 import { generateAndSharePDF } from '../lib/pdf'
 
 export default function Detail() {
+  const { user } = useAuth()
+  const uid = user?.uid || ''
+
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [toastMessage, setToastMessage] = useState<string | null>(null)
   const [showToast, setShowToast] = useState(false)
 
-  const tx = id ? getTransaction(id) : undefined
+  const tx = id && uid ? getTransaction(id, uid) : undefined
 
   const result =
     tx && tx.participants.length > 0 ? computeSettlement(tx.participants) : null

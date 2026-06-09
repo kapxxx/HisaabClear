@@ -1,16 +1,42 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { useAuth } from '../components/AuthContext'
 import { deleteTransactions, loadTransactions } from '../lib/storage'
 
 export default function Home() {
+  const { user, signOutUser } = useAuth()
+  const uid = user?.uid || ''
+
   const location = useLocation()
   const [tick, setTick] = useState(0)
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
   const [searchQuery, setSearchQuery] = useState('')
+  const [isOnline, setIsOnline] = useState(navigator.onLine)
+
+  // Reload transactions when storage is synced from the cloud
+  useEffect(() => {
+    const handleSync = () => {
+      setTick((t) => t + 1)
+    }
+    window.addEventListener('storage-sync', handleSync)
+    return () => window.removeEventListener('storage-sync', handleSync)
+  }, [])
+
+  // Monitor online status
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true)
+    const handleOffline = () => setIsOnline(false)
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [])
 
   const transactions = useMemo(
-    () => loadTransactions(),
-    [location.key, location.pathname, tick],
+    () => loadTransactions(uid),
+    [location.key, location.pathname, tick, uid],
   )
 
   const filteredTransactions = useMemo(() => {
@@ -39,7 +65,7 @@ export default function Home() {
   const clearSelection = useCallback(() => setSelected(new Set()), [])
 
   const deleteSelected = useCallback(() => {
-    if (selected.size === 0) return
+    if (selected.size === 0 || !uid) return
     const n = selected.size
     const ok = window.confirm(
       n === 1
@@ -47,10 +73,10 @@ export default function Home() {
         : `Delete ${n} transactions? This cannot be undone.`,
     )
     if (!ok) return
-    deleteTransactions([...selected])
+    deleteTransactions([...selected], uid)
     setSelected(new Set())
     setTick((t) => t + 1)
-  }, [selected])
+  }, [selected, uid])
 
   const hasList = transactions.length > 0
   const selCount = selected.size
@@ -87,11 +113,35 @@ export default function Home() {
     }
   }
 
+  const firstName = user?.displayName ? user.displayName.split(' ')[0] : 'User'
+
   return (
     <div className="page">
       <header className="header sticky-header">
-        <h1 className="header-title">Hisab Clear</h1>
-        <p className="header-sub">Your settlements</p>
+        <div className="header-top-row">
+          <div className="header-titles">
+            <h1 className="header-title">Hisab Clear</h1>
+            <p className="header-sub">Hi, {firstName}</p>
+          </div>
+          <div className="header-profile">
+            <button
+              type="button"
+              className="btn-logout-icon"
+              onClick={signOutUser}
+              title="Sign Out"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div className={`sync-status-indicator ${isOnline ? 'status-online' : 'status-offline'}`}>
+          <span className="status-dot"></span>
+          <span className="status-text">{isOnline ? 'Cloud sync active' : 'Offline (saved locally)'}</span>
+        </div>
       </header>
 
       <main className="main">
@@ -159,7 +209,7 @@ export default function Home() {
             <p className="empty-title">No transactions found</p>
             <p className="empty-text">
               We couldn't find any transactions matching "{searchQuery}".
-            </p>
+              </p>
           </div>
         ) : (
           <ul className="list">
@@ -177,8 +227,8 @@ export default function Home() {
                     </label>
                   )}
                   {selCount > 0 ? (
-                    <div 
-                      className="list-item" 
+                    <div
+                      className="list-item"
                       onClick={() => toggle(tx.id)}
                       style={{ cursor: 'pointer', flex: 1 }}
                     >
@@ -186,8 +236,8 @@ export default function Home() {
                       <span className="list-name">{tx.name}</span>
                     </div>
                   ) : (
-                    <Link 
-                      className="list-item" 
+                    <Link
+                      className="list-item"
                       to={`/transaction/${tx.id}`}
                       onTouchStart={() => handlePointerDown(tx.id)}
                       onTouchEnd={handlePointerUpOrLeave}
@@ -213,8 +263,8 @@ export default function Home() {
           </ul>
         )}
 
-        <Link 
-          className="btn-fab" 
+        <Link
+          className="btn-fab"
           to="/create"
           title="Make transaction"
           onClick={(e) => {

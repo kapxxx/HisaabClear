@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useMatch, useNavigate } from 'react-router-dom'
+import { useAuth } from '../components/AuthContext'
 import { getTransaction, saveTransaction, loadTransactions } from '../lib/storage'
 import type { Participant } from '../types'
 
@@ -21,6 +22,9 @@ function normalizeParticipant(r: RowData): Participant {
 }
 
 export default function Create() {
+  const { user } = useAuth()
+  const uid = user?.uid || ''
+
   const navigate = useNavigate()
   const editMatch = useMatch({ path: '/transaction/:id/edit', end: true })
   const editId = editMatch?.params.id
@@ -28,7 +32,7 @@ export default function Create() {
   const [title, setTitle] = useState('')
   const [rows, setRows] = useState<RowData[]>(() => [newRow(), newRow()])
   const [loadedEditId, setLoadedEditId] = useState<string | null>(null)
-  
+
   const [showNotes, setShowNotes] = useState(false)
   const [errors, setErrors] = useState<{
     title?: string
@@ -36,11 +40,11 @@ export default function Create() {
   }>({})
 
   useEffect(() => {
-    if (!editId) {
+    if (!editId || !uid) {
       setLoadedEditId(null)
       return
     }
-    const tx = getTransaction(editId)
+    const tx = getTransaction(editId, uid)
     if (!tx) {
       navigate('/home', { replace: true })
       return
@@ -59,7 +63,7 @@ export default function Create() {
       setShowNotes(true)
     }
     setLoadedEditId(editId)
-  }, [editId, navigate])
+  }, [editId, navigate, uid])
 
   const updateRow = useCallback((id: string, patch: Partial<RowData>) => {
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)))
@@ -92,6 +96,8 @@ export default function Create() {
   }, [rows])
 
   const submit = useCallback(() => {
+    if (!uid) return
+
     let hasError = false
     const newErrors: { title?: string; rows?: { name?: string; paid?: string }[] } = {
       rows: rows.map(() => ({})),
@@ -129,7 +135,7 @@ export default function Create() {
     }
 
     if (editId && loadedEditId === editId) {
-      const existing = getTransaction(editId)
+      const existing = getTransaction(editId, uid)
       if (!existing) {
         navigate('/home', { replace: true })
         return
@@ -138,12 +144,12 @@ export default function Create() {
         ...existing,
         name,
         participants: cleaned,
-      })
+      }, uid)
       navigate(`/transaction/${editId}`, { replace: true })
       return
     }
 
-    const allTx = loadTransactions()
+    const allTx = loadTransactions(uid)
     if (allTx.length >= 50) {
       window.alert('Maximum limit of 50 transactions reached. Please delete some to create new ones.')
       return
@@ -155,9 +161,9 @@ export default function Create() {
       createdAt: new Date().toISOString(),
       participants: cleaned,
     }
-    saveTransaction(tx)
+    saveTransaction(tx, uid)
     navigate(`/transaction/${tx.id}`, { replace: true })
-  }, [editId, loadedEditId, navigate, rows, title])
+  }, [editId, loadedEditId, navigate, rows, title, uid])
 
   const isEdit = Boolean(editId)
   const backTo = isEdit && editId ? `/transaction/${editId}` : '/home'
@@ -198,10 +204,10 @@ export default function Create() {
         <div className="people-head">
           <span className="label">People &amp; amount paid</span>
           <label className="toggle-wrap">
-            <input 
-              type="checkbox" 
-              checked={showNotes} 
-              onChange={(e) => setShowNotes(e.target.checked)} 
+            <input
+              type="checkbox"
+              checked={showNotes}
+              onChange={(e) => setShowNotes(e.target.checked)}
             />
             Show Notes
           </label>

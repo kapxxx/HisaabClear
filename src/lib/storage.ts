@@ -1,10 +1,14 @@
 import type { Transaction } from '../types'
+import { backupToCloud } from './sync'
 
-const KEY = 'hisab-clear-transactions-v1'
+function getUserKey(uid: string): string {
+  return `hisab-clear-transactions-${uid}-v1`
+}
 
-function readRaw(): Transaction[] {
+function readRaw(uid: string): Transaction[] {
+  if (!uid) return []
   try {
-    const raw = localStorage.getItem(KEY)
+    const raw = localStorage.getItem(getUserKey(uid))
     if (!raw) return []
     const parsed = JSON.parse(raw) as unknown
     if (!Array.isArray(parsed)) return []
@@ -42,25 +46,32 @@ interface ParticipantLike {
   note?: string
 }
 
-export function loadTransactions(): Transaction[] {
-  return readRaw().sort(
+export function loadTransactions(uid: string): Transaction[] {
+  return readRaw(uid).sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
   )
 }
 
-export function saveTransaction(tx: Transaction): void {
-  const list = readRaw().filter((t) => t.id !== tx.id)
+export function saveTransaction(tx: Transaction, uid: string): void {
+  if (!uid) return
+  const list = readRaw(uid).filter((t) => t.id !== tx.id)
   list.push(tx)
-  localStorage.setItem(KEY, JSON.stringify(list))
+  localStorage.setItem(getUserKey(uid), JSON.stringify(list))
+
+  // Trigger background cloud sync
+  backupToCloud(uid, list)
 }
 
-export function getTransaction(id: string): Transaction | undefined {
-  return readRaw().find((t) => t.id === id)
+export function getTransaction(id: string, uid: string): Transaction | undefined {
+  return readRaw(uid).find((t) => t.id === id)
 }
 
-export function deleteTransactions(ids: string[]): void {
-  if (ids.length === 0) return
+export function deleteTransactions(ids: string[], uid: string): void {
+  if (!uid || ids.length === 0) return
   const idSet = new Set(ids)
-  const list = readRaw().filter((t) => !idSet.has(t.id))
-  localStorage.setItem(KEY, JSON.stringify(list))
+  const list = readRaw(uid).filter((t) => !idSet.has(t.id))
+  localStorage.setItem(getUserKey(uid), JSON.stringify(list))
+
+  // Trigger background cloud sync
+  backupToCloud(uid, list)
 }

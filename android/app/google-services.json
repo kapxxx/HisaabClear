@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "269023699761",
+    "project_id": "hisab-clear-9092e",
+    "storage_bucket": "hisab-clear-9092e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:269023699761:android:4b5fe145f1b9e58f214610",
+        "android_client_info": {
+          "package_name": "com.hisabclear.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "269023699761-t7t58c8r59vo1j3cp1lce16cj7goe1i5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.hisabclear.app",
+            "certificate_hash": "48de70d3750c968c35c15fb8cb11dcfaafe57ec3"
+          }
+        },
+        {
+          "client_id": "269023699761-orned7knf4qnbrjkjpvbtf8jqivthcv6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC9Kox4mkr6Em_IDsnD0NJ4AiF-o4hVrcg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "269023699761-orned7knf4qnbrjkjpvbtf8jqivthcv6.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

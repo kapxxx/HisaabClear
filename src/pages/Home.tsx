@@ -11,7 +11,9 @@ export default function Home() {
   const [tick, setTick] = useState(0)
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
   const [searchQuery, setSearchQuery] = useState('')
-  const [isOnline, setIsOnline] = useState(navigator.onLine)
+  // Sidebar and Custom Logout Modal States
+  const [showSidebar, setShowSidebar] = useState(false)
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
 
   // Reload transactions when storage is synced from the cloud
   useEffect(() => {
@@ -20,18 +22,6 @@ export default function Home() {
     }
     window.addEventListener('storage-sync', handleSync)
     return () => window.removeEventListener('storage-sync', handleSync)
-  }, [])
-
-  // Monitor online status
-  useEffect(() => {
-    const handleOnline = () => setIsOnline(true)
-    const handleOffline = () => setIsOnline(false)
-    window.addEventListener('online', handleOnline)
-    window.addEventListener('offline', handleOffline)
-    return () => {
-      window.removeEventListener('online', handleOnline)
-      window.removeEventListener('offline', handleOffline)
-    }
   }, [])
 
   const transactions = useMemo(
@@ -126,21 +116,13 @@ export default function Home() {
           <div className="header-profile">
             <button
               type="button"
-              className="btn-logout-icon"
-              onClick={signOutUser}
-              title="Sign Out"
+              className="profile-avatar-btn"
+              onClick={() => setShowSidebar(true)}
+              title="View Profile"
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                <polyline points="16 17 21 12 16 7"></polyline>
-                <line x1="21" y1="12" x2="9" y2="12"></line>
-              </svg>
+              {user?.displayName ? user.displayName.slice(0, 1).toUpperCase() : '👤'}
             </button>
           </div>
-        </div>
-        <div className={`sync-status-indicator ${isOnline ? 'status-online' : 'status-offline'}`}>
-          <span className="status-dot"></span>
-          <span className="status-text">{isOnline ? 'Cloud sync active' : 'Offline (saved locally)'}</span>
         </div>
       </header>
 
@@ -209,7 +191,7 @@ export default function Home() {
             <p className="empty-title">No transactions found</p>
             <p className="empty-text">
               We couldn't find any transactions matching "{searchQuery}".
-              </p>
+            </p>
           </div>
         ) : (
           <ul className="list">
@@ -281,6 +263,80 @@ export default function Home() {
           <span>Make transaction</span>
         </Link>
       </main>
+
+      {/* Profile Sidebar Drawer */}
+      {showSidebar && (
+        <div className="profile-sidebar-overlay fade-in" onClick={() => setShowSidebar(false)}>
+          <div className="profile-sidebar" onClick={(e) => e.stopPropagation()}>
+            <div className="profile-sidebar-header">
+              <h3 className="profile-sidebar-title">Account Details</h3>
+              <button 
+                type="button" 
+                className="btn-close-sidebar" 
+                onClick={() => setShowSidebar(false)}
+                aria-label="Close Profile"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            
+            <div className="profile-sidebar-content">
+              <div className="profile-sidebar-avatar-large animate-pulse-subtle">
+                {user?.displayName ? user.displayName.slice(0, 1).toUpperCase() : '👤'}
+              </div>
+              <div className="profile-sidebar-info">
+                <h4 className="profile-sidebar-name">{user?.displayName || 'User'}</h4>
+                <p className="profile-sidebar-email">{user?.email || 'No email associated'}</p>
+              </div>
+            </div>
+
+            <div className="profile-sidebar-footer">
+              <button 
+                type="button" 
+                className="btn-danger-sidebar" 
+                onClick={() => setShowLogoutConfirm(true)}
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Logout Confirmation Alert Modal */}
+      {showLogoutConfirm && (
+        <div className="logout-confirm-overlay fade-in">
+          <div className="logout-confirm-card scale-in">
+            <div className="logout-confirm-icon">⚠️</div>
+            <h3 className="logout-confirm-title">Are you sure you want to logout?</h3>
+            <p className="logout-confirm-desc">You will need to sign in again to access your transactions.</p>
+            <div className="logout-confirm-buttons">
+              <button 
+                type="button" 
+                className="btn-highlight-no"
+                onClick={() => setShowLogoutConfirm(false)}
+                autoFocus
+              >
+                No, Keep Me In
+              </button>
+              <button 
+                type="button" 
+                className="btn-danger-text" 
+                onClick={async () => {
+                  setShowLogoutConfirm(false)
+                  setShowSidebar(false)
+                  await signOutUser()
+                }}
+              >
+                Yes, Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

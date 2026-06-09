@@ -20,15 +20,37 @@ export default function Register() {
     e.preventDefault()
     
     // Client-side validations
-    if (!name.trim() || !email.trim() || !password.trim() || !confirmPassword.trim()) {
+    const trimmedName = name.trim()
+    const trimmedEmail = email.trim()
+    const trimmedPassword = password.trim()
+    const trimmedConfirmPassword = confirmPassword.trim()
+
+    if (!trimmedName || !trimmedEmail || !trimmedPassword || !trimmedConfirmPassword) {
       setError('Please fill in all fields.')
       return
     }
-    if (password.length < 6) {
+
+    if (trimmedName.length > 30) {
+      setError('Name cannot exceed 30 characters.')
+      return
+    }
+
+    if (trimmedEmail.length > 50) {
+      setError('Email cannot exceed 50 characters.')
+      return
+    }
+
+    if (trimmedPassword.length > 20) {
+      setError('Password cannot exceed 20 characters.')
+      return
+    }
+
+    if (trimmedPassword.length < 6) {
       setError('Password must be at least 6 characters long.')
       return
     }
-    if (password !== confirmPassword) {
+
+    if (trimmedPassword !== trimmedConfirmPassword) {
       setError('Passwords do not match.')
       return
     }
@@ -38,12 +60,12 @@ export default function Register() {
 
     try {
       // 1. Sign up user
-      await signUpWithEmail(email, password)
+      await signUpWithEmail(trimmedEmail, trimmedPassword)
 
       // 2. Set profile display name
       if (auth.currentUser) {
         await updateProfile(auth.currentUser, {
-          displayName: name.trim()
+          displayName: trimmedName
         })
       }
 
@@ -97,7 +119,8 @@ export default function Register() {
                 className="form-input"
                 placeholder="John Doe"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => setName(e.target.value.slice(0, 30))}
+                maxLength={30}
                 disabled={loading}
                 required
               />
@@ -111,7 +134,8 @@ export default function Register() {
                 className="form-input"
                 placeholder="name@example.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => setEmail(e.target.value.slice(0, 50))}
+                maxLength={50}
                 disabled={loading}
                 required
               />
@@ -126,7 +150,8 @@ export default function Register() {
                   className="form-input password-input"
                   placeholder="At least 6 characters"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => setPassword(e.target.value.slice(0, 20))}
+                  maxLength={20}
                   disabled={loading}
                   required
                 />
@@ -159,7 +184,8 @@ export default function Register() {
                 className="form-input"
                 placeholder="Re-enter password"
                 value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                onChange={(e) => setConfirmPassword(e.target.value.slice(0, 20))}
+                maxLength={20}
                 disabled={loading}
                 required
               />

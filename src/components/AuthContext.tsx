@@ -7,7 +7,8 @@ import {
   signOut as firebaseSignOut,
   signInWithCredential,
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  sendPasswordResetEmail
 } from 'firebase/auth'
 import { Capacitor } from '@capacitor/core'
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication'
@@ -21,6 +22,7 @@ interface AuthContextType {
   signUpWithEmail: (email: string, pass: string) => Promise<void>
   signInWithGoogle: () => Promise<void>
   signOutUser: () => Promise<void>
+  sendPasswordReset: (email: string) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -31,6 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setLoading(true)
       if (firebaseUser) {
         // 1. Migrate any guest data to this user's account
         await migrateLegacyData(firebaseUser.uid)
@@ -88,6 +91,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await firebaseSignOut(auth)
   }
 
+  const sendPasswordReset = async (email: string) => {
+    await sendPasswordResetEmail(auth, email)
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -96,7 +103,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signInWithEmail,
         signUpWithEmail,
         signInWithGoogle,
-        signOutUser
+        signOutUser,
+        sendPasswordReset
       }}
     >
       {children}

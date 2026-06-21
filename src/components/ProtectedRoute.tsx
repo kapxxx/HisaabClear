@@ -8,7 +8,9 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
   if (loading) {
     return (
       <div className="splash fade-in">
-        <div className="splash-mark loader-pulse">₹</div>
+        <div className="splash-mark loader-pulse" style={{ background: 'none', boxShadow: 'none' }}>
+          <img src="/icon.png" alt="Hisab Clear Logo" style={{ width: '100%', height: '100%', borderRadius: 'inherit', objectFit: 'contain' }} />
+        </div>
         <h2 className="loading-text">Loading secure session...</h2>
       </div>
     )

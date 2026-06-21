@@ -22,7 +22,9 @@ export default function Splash() {
 
   return (
     <div className="splash">
-      <div className="splash-mark">₹</div>
+      <div className="splash-mark" style={{ background: 'none', boxShadow: 'none' }}>
+        <img src="/icon.png" alt="Hisab Clear Logo" style={{ width: '100%', height: '100%', borderRadius: 'inherit', objectFit: 'contain' }} />
+      </div>
       <h1 className="splash-title">Hisab Clear</h1>
       <p className="splash-tagline">Split trips. Settle fast.</p>
     </div>

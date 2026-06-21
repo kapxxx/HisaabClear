@@ -117,7 +117,9 @@ export default function Login() {
     <div className="auth-page page">
       <div className="auth-container">
         <div className="auth-brand">
-          <div className="auth-logo">₹</div>
+          <div className="auth-logo" style={{ background: 'none', boxShadow: 'none' }}>
+            <img src="/icon.png" alt="Hisab Clear Logo" style={{ width: '100%', height: '100%', borderRadius: 'inherit', objectFit: 'contain' }} />
+          </div>
           <h1 className="auth-app-title">Hisab Clear</h1>
           <p className="auth-app-subtitle">Log in to secure your split bills</p>
         </div>

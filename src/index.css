@@ -94,11 +94,11 @@ a:hover {
 
 /* Page layout */
 .page {
-  padding-top: 0.5rem;
+  padding-top: 0;
 }
 
 .header {
-  padding: 1rem 0 0.5rem;
+  padding: calc(1.5rem + env(safe-area-inset-top, 0px)) 0 0.5rem;
   text-align: center;
 }
 
@@ -635,7 +635,7 @@ a:hover {
   position: sticky;
   top: 0;
   z-index: 100;
-  padding: 1.25rem 1rem 0.75rem;
+  padding: calc(1.75rem + env(safe-area-inset-top, 0px)) 1rem 0.75rem;
   margin: 0 -1rem;
   border-bottom: 1px solid var(--border);
   backdrop-filter: blur(16px);
@@ -646,7 +646,7 @@ a:hover {
 /* Floating Action Button (FAB) */
 .btn-fab {
   position: fixed;
-  bottom: 2rem;
+  bottom: 3rem;
   right: calc(50% - 260px + 2rem);
   height: 50px;
   padding: 0 1.35rem;
@@ -680,7 +680,7 @@ a:hover {
 @media (max-width: 520px) {
   .btn-fab {
     right: 1.5rem;
-    bottom: 1.5rem;
+    bottom: 3.5rem;
   }
 }
 

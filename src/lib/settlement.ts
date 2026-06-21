@@ -81,8 +81,20 @@ export function computeSettlement(participants: Participant[]): SettlementResult
 function remainderHint(total: number, n: number): string {
   const base = Math.floor(total / n)
   const r = total % n
-  if (r === 0) return `₹${base} each (equal split)`
-  return `₹${base}–₹${base + 1} each (${r} person(s) pay ₹${base + 1} so the total matches exactly)`
+  if (r === 0) return `${formatRupees(base)} each (equal split)`
+
+  const exactVal = total / n
+  const exactStr = new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(exactVal)
+
+  const rPeople = r === 1 ? '1 person pays' : `${r} people pay`
+  const others = n - r === 1 ? '1 person pays' : `${n - r} people pay`
+
+  return `${exactStr} each (${rPeople} ${formatRupees(base + 1)}, and ${others} ${formatRupees(base)})`
 }
 
 export function formatRupees(value: number): string {

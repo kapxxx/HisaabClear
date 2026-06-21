@@ -107,13 +107,30 @@ export default function Create() {
     if (!name) {
       newErrors.title = 'Transaction name is required'
       hasError = true
+    } else {
+      const allTx = loadTransactions(uid)
+      const nameLower = name.toLowerCase()
+      const duplicateTitle = allTx.some(t => t.name.trim().toLowerCase() === nameLower && t.id !== editId)
+      if (duplicateTitle) {
+        newErrors.title = 'A transaction with this name already exists'
+        hasError = true
+      }
     }
 
-    const rowErrors = rows.map((r) => {
+    const rowErrors = rows.map((r, idx) => {
       const err: { name?: string; paid?: string } = {}
-      if (!r.name.trim()) {
+      const rName = r.name.trim()
+      if (!rName) {
         err.name = 'Name is required'
         hasError = true
+      } else {
+        const isDuplicate = rows.some((otherRow, otherIdx) => {
+          return otherIdx !== idx && otherRow.name.trim().toLowerCase() === rName.toLowerCase()
+        })
+        if (isDuplicate) {
+          err.name = 'Duplicate name not allowed'
+          hasError = true
+        }
       }
       if (r.paidInput === undefined || r.paidInput.trim() === '') {
         err.paid = 'Amount is required'

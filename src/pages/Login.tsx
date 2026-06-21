@@ -77,7 +77,11 @@ export default function Login() {
         // User cancelled, do not display error
         return
       }
-      setError(err.message || 'Google Sign-In failed.')
+      let errMsg = err.message || 'Google Sign-In failed.'
+      if (errMsg.toLowerCase().includes('credential manager') || errMsg.toLowerCase().includes('credentialmanager')) {
+        errMsg = "Google Sign-In is not supported on this device. Please update Google Play Services in your Play Store, or log in using Email & Password."
+      }
+      setError(errMsg)
     } finally {
       setLoading(false)
     }

@@ -1,3 +1,4 @@
+// Test comment to verify branch and file editing capability
 export interface Participant {
   id: string
   name: string

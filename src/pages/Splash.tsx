@@ -9,15 +9,11 @@ export default function Splash() {
   useEffect(() => {
     if (loading) return
 
-    const t = window.setTimeout(() => {
-      if (user) {
-        navigate('/home', { replace: true })
-      } else {
-        navigate('/login', { replace: true })
-      }
-    }, 1600)
-
-    return () => window.clearTimeout(t)
+    if (user) {
+      navigate('/home', { replace: true })
+    } else {
+      navigate('/login', { replace: true })
+    }
   }, [navigate, user, loading])
 
   return (
